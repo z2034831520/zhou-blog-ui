@@ -1,0 +1,27 @@
+{{ $groups := .Pages.GroupByParam "column" }}
+{{ $ordered := slice }}
+{{ range $groups }}{{ if eq .Key "单片机" }}{{ $ordered = $ordered | append . }}{{ end }}{{ end }}
+{{ range $groups }}{{ if ne .Key "单片机" }}{{ $ordered = $ordered | append . }}{{ end }}{{ end }}
+<div class="bento-grid">
+  {{ range $index, $group := $ordered }}
+    {{ $latest := index $group.Pages.ByDate.Reverse 0 }}
+    {{ $columnID := printf "column-%s" (md5 $group.Key) }}
+    {{ $excerpt := $latest.Description }}
+    {{ if not $excerpt }}{{ $excerpt = $latest.Summary | plainify }}{{ end }}
+    <article class="bento-tile{{ if eq $index 0 }} bento-tile-featured{{ end }}">
+      <div class="bento-meta">
+        <span>NOTEBOOK / {{ printf "%02d" (math.Add $index 1) }}</span>
+        <span>{{ len $group.Pages }} 篇文章</span>
+      </div>
+      <div class="bento-main">
+        <h3><a class="bento-column-link" href="{{ "posts/" | relURL }}#{{ $columnID }}">{{ $group.Key }}<span aria-hidden="true">↗</span></a></h3>
+        {{ if eq $index 0 }}<p class="bento-lead">从一个主题开始，沿着笔记继续探索。</p>{{ end }}
+      </div>
+      <div class="bento-recent">
+        <span class="bento-recent-label">最近记录 · {{ $latest.Date.Format "2006.01.02" }}</span>
+        <a href="{{ $latest.RelPermalink }}">{{ $latest.Title }} <span aria-hidden="true">→</span></a>
+        <p>{{ $excerpt | plainify | truncate 92 }}</p>
+      </div>
+    </article>
+  {{ end }}
+</div>

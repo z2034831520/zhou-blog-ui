@@ -1,0 +1,35 @@
+{{ $groups := .Pages.GroupByParam "column" }}
+<section class="constellation{{ if .ScrollExpand }} constellation-scroll-expand{{ end }}" aria-labelledby="constellation-title"{{ if .ScrollExpand }} data-scroll-expand{{ end }}>
+  <div class="constellation-heading">
+    <div>
+      <p class="section-kicker">EXPLORE THE CONSTELLATION</p>
+      <h2 id="constellation-title">专栏星图</h2>
+    </div>
+    <p>每颗星是一处专栏。沿着连线发现主题，点亮一颗星继续阅读。</p>
+    {{ if .ScrollExpand }}
+    <div class="constellation-quote" data-decrypted-sequence>
+      <p class="constellation-quote-en"><span class="sr-only">To classify knowledge perfectly is to build it a perfect tomb.</span><span data-decrypted-text aria-hidden="true">To classify knowledge perfectly is to build it a perfect tomb.</span></p>
+      <p class="constellation-quote-zh">将知识进行完美的分类=给知识建造一个完美的坟墓</p>
+    </div>
+    {{ end }}
+  </div>
+  <div class="constellation-sticky">
+  <div class="constellation-scroll" tabindex="0" aria-label="专栏星图，可左右滚动">
+    <div class="constellation-stage" data-constellation>
+      <div class="constellation-world">
+      <svg class="constellation-lines" aria-hidden="true"></svg>
+      <nav class="constellation-nav" aria-label="按专栏浏览文章">
+        {{ range $groups }}
+        <a class="constellation-node" data-column="{{ .Key }}" href="{{ "posts/" | relURL }}#column-{{ md5 .Key }}" aria-label="{{ .Key }}专栏，{{ len .Pages }}篇文章">
+          <span class="constellation-star" aria-hidden="true"></span>
+          <span class="constellation-name">{{ .Key }}</span>
+          <span class="constellation-count">{{ len .Pages }} 篇文章</span>
+        </a>
+        {{ end }}
+      </nav>
+      </div>
+    </div>
+  </div>
+  <p class="constellation-hint">{{ len $groups }} 个专栏 · 点击星点进入专栏{{ if .ScrollExpand }}<span class="constellation-scroll-hint"> · 滚动一次展开全图，继续滚动保持原尺寸</span><span class="constellation-progress" aria-hidden="true"></span>{{ end }}<span class="constellation-touch-hint"> · 左右滑动探索</span></p>
+  </div>
+</section>

@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <meta name="theme-color" content="#080a0d">
+  <meta name="description" content="{{ with .Description }}{{ . }}{{ else }}{{ .Site.Params.description }}{{ end }}">
+  <title>{{ if .IsHome }}{{ .Site.Title }}{{ else }}{{ .Title }} · {{ .Site.Title }}{{ end }}</title>
+  <link rel="icon" type="image/svg+xml" href="{{ "brand-mark.svg" | relURL }}">
+  <link rel="stylesheet" href="{{ "css/site.css" | relURL }}?v=20261005-about-echo">
+  <script src="{{ "js/site-effects.js" | relURL }}?v=20261004-columns" defer></script>
+  <script src="{{ "js/glow-cursor.js" | relURL }}?v=20261005-glow-cursor" defer></script>
+  {{ if or .IsHome (and .IsSection (eq .Section "posts")) }}<script src="{{ "js/category-constellation.js" | relURL }}?v=20261005-short-hold" defer></script>{{ end }}
+  {{ if .IsHome }}<script src="{{ "js/cursor-grid.js" | relURL }}?v=20261005" defer></script>{{ end }}
+  {{ if .IsHome }}<script src="{{ "js/decrypted-text.js" | relURL }}?v=20261005-quote-sequence" defer></script>{{ end }}
+  {{ if .Params.echo_title }}<script src="{{ "js/about-echo.js" | relURL }}?v=20261005-about-echo" defer></script>{{ end }}
+  {{ if and .IsSection (eq .Section "posts") }}<script src="{{ "js/particle-text.js" | relURL }}?v=20261005-articles-mobile" defer></script>{{ end }}
+  {{ if and .IsSection (eq .Section "posts") }}<script src="{{ "js/article-reveal.js" | relURL }}?v=20261005-article-layout" defer></script>{{ end }}
+  <link rel="alternate" type="application/rss+xml" title="{{ .Site.Title }} RSS" href="{{ "posts/index.xml" | relURL }}">
+</head>
+<body>
+  <div class="site-shell">
+    <header class="site-header">
+      <a class="brand" href="{{ .Site.Home.RelPermalink }}" aria-label="返回首页">
+        <img class="brand-mark" src="{{ "brand-mark.svg" | relURL }}" width="36" height="36" alt="">
+        <span>Zhouxian<span class="brand-dot">.</span></span>
+      </a>
+      <nav class="site-nav" aria-label="主导航">
+        <a href="{{ .Site.Home.RelPermalink }}">首页</a>
+        <a href="{{ "posts/" | relURL }}">文章</a>
+        <a href="{{ "about/" | relURL }}">关于</a>
+      </nav>
+    </header>
+    <main id="content">
+      {{ block "main" . }}{{ end }}
+    </main>
+    <footer class="site-footer">
+      <span>© {{ now.Format "2006" }} Zhouxian</span>
+      <span>学习、记录、分享。</span>
+    </footer>
+  </div>
+</body>
+</html>

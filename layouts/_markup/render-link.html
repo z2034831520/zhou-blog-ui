@@ -1,0 +1,5 @@
+{{- $destination := urls.Parse .Destination -}}
+{{- $site := urls.Parse .Page.Site.BaseURL -}}
+{{- $external := and $destination.Host (ne (lower $destination.Host) (lower $site.Host)) -}}
+<a href="{{ .Destination | safeURL }}"{{ with .Title }} title="{{ . }}"{{ end }}{{ if $external }} target="_blank" rel="noopener noreferrer"{{ end }}>{{ .Text }}</a>
+{{- /* Trim the newline after a Markdown link. */ -}}

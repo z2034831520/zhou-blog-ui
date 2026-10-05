@@ -1,0 +1,15 @@
+{{ define "main" }}
+<article class="article">
+  <div class="article-heading">
+    {{ if eq .Section "posts" }}<p class="section-kicker">ARTICLE · {{ .Date.Format "2006.01.02" }}</p>{{ else }}<p class="section-kicker">ABOUT</p>{{ end }}
+    {{ if .Params.echo_title }}
+    <div class="about-echo-viewport"><h1 class="about-echo-title" data-echo-text><span class="about-echo-front">{{ .Title }}</span></h1></div>
+    {{ else }}
+    <h1>{{ .Title }}</h1>
+    {{ end }}
+    {{ with .Description }}<p>{{ . }}</p>{{ end }}
+  </div>
+  <div class="prose">{{ .Content }}</div>
+  {{ if eq .Section "posts" }}<a class="back-link" href="{{ "posts/" | relURL }}">← 返回文章列表</a>{{ end }}
+</article>
+{{ end }}

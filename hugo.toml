@@ -1,0 +1,8 @@
+baseURL = 'https://example.org/'
+defaultContentLanguage = 'zh-cn'
+locale = 'zh-CN'
+title = 'Zhouxian · 个人网站'
+enableRobotsTXT = true
+
+[params]
+  description = '嵌入式小白，日常博客，欢迎围观。'

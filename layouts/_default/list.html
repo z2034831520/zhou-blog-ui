@@ -1,0 +1,65 @@
+{{ define "main" }}
+<section class="page-intro">
+  <p class="section-kicker">JOURNAL</p>
+  {{ if and .IsSection (eq .Section "posts") }}
+  <h1 class="article-particle-title" data-particle-title><span>{{ .Title }}</span><canvas aria-hidden="true"></canvas></h1>
+  {{ else }}
+  <h1>{{ .Title }}</h1>
+  {{ end }}
+</section>
+<section class="content-section list-section">
+  {{ if .Pages }}
+    {{ $featured := index (.Pages.ByDate.Reverse) 0 }}
+    {{ $featuredPages := where .Pages "Params.featured" true }}
+    {{ $featureLabel := "最新发布" }}
+    {{ if $featuredPages }}
+      {{ $featured = index ($featuredPages.ByDate.Reverse) 0 }}
+      {{ $featureLabel = "精选笔记" }}
+    {{ end }}
+    <section class="articles-featured" aria-labelledby="featured-heading">
+      <div class="articles-featured-heading">
+        <div>
+          <p class="section-kicker">START READING</p>
+          <h2 id="featured-heading">挑一篇开始阅读</h2>
+        </div>
+        <p>从一篇笔记出发，再按主题继续探索。</p>
+      </div>
+      <div class="articles-featured-grid">
+        <a class="post-card featured-post" href="{{ $featured.RelPermalink }}">
+          <span class="featured-post-top"><span>{{ $featureLabel }}</span><span>{{ $featured.Date.Format "2006.01.02" }}</span></span>
+          <span class="featured-post-body">
+            <span class="featured-post-column">{{ $featured.Params.column | default "随笔" }}</span>
+            <strong class="featured-post-title">{{ $featured.Title }}</strong>
+            <span class="featured-post-excerpt">{{ with $featured.Description }}{{ . }}{{ else }}{{ $featured.Summary | plainify | truncate 130 }}{{ end }}</span>
+          </span>
+          <span class="featured-post-link">阅读文章 <span aria-hidden="true">↗</span></span>
+        </a>
+        <aside class="articles-index" aria-labelledby="articles-index-title">
+          <p class="section-kicker">EXPLORE TOPICS</p>
+          <h3 id="articles-index-title">按专栏浏览</h3>
+          <nav aria-label="文章专栏">
+            {{ range .Pages.GroupByParam "column" }}
+            <a href="#column-{{ md5 .Key }}"><span>{{ .Key }}</span><span>{{ len .Pages }} <span aria-hidden="true">↗</span></span></a>
+            {{ end }}
+          </nav>
+        </aside>
+      </div>
+    </section>
+    {{ partial "category-constellation.html" (dict "Pages" .Pages) }}
+    <div class="articles-list-heading">
+      <div>
+        <p class="section-kicker">ALL WRITING</p>
+        <h2>全部文章</h2>
+      </div>
+      <span>{{ len .Pages }} 篇文章</span>
+    </div>
+    {{ partial "post-columns.html" (dict "Pages" .Pages "Limit" 0) }}
+  {{ else }}
+  <div class="empty-state">
+    <span class="empty-icon" aria-hidden="true">✦</span>
+    <p>还没有公开的文章。</p>
+    <span>第一篇文章发布后会出现在这里。</span>
+  </div>
+  {{ end }}
+</section>
+{{ end }}

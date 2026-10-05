@@ -1,0 +1,50 @@
+{{ define "main" }}
+<section class="hero">
+  <canvas class="hero-cursor-grid" aria-hidden="true"></canvas>
+  <p class="eyebrow"><span class="eyebrow-line"></span> PERSONAL WEBSITE</p>
+  <h1 class="hero-title" aria-label="把所学的知识，慢慢写下来。">
+    <span class="blur-line" aria-hidden="true">
+      <span class="blur-char" style="--delay: 0ms">把</span>
+      <span class="blur-char" style="--delay: 65ms">所</span>
+      <span class="blur-char" style="--delay: 130ms">学</span>
+      <span class="blur-char" style="--delay: 195ms">的</span>
+      <span class="blur-char" style="--delay: 260ms">知</span>
+      <span class="blur-char" style="--delay: 325ms">识</span>
+      <span class="blur-char" style="--delay: 390ms">，</span>
+    </span>
+    <em class="blur-line" aria-hidden="true">
+      <span class="blur-char" style="--delay: 455ms">慢</span>
+      <span class="blur-char" style="--delay: 520ms">慢</span>
+      <span class="blur-char" style="--delay: 585ms">写</span>
+      <span class="blur-char" style="--delay: 650ms">下</span>
+      <span class="blur-char" style="--delay: 715ms">来</span>
+      <span class="blur-char" style="--delay: 780ms">。</span>
+    </em>
+  </h1>
+  <p class="hero-copy">嵌入式小白，日常博客，欢迎围观。这里记录我的学习笔记与项目实践。</p>
+  <div class="hero-actions">
+    <a class="button-primary star-border" href="{{ "posts/" | relURL }}"><span class="star-border-content">阅读文章 <span aria-hidden="true">↗</span></span></a>
+    <a class="button-text" href="{{ "about/" | relURL }}">了解更多 <span aria-hidden="true">→</span></a>
+  </div>
+</section>
+<section class="content-section" aria-labelledby="columns-title">
+  <div class="section-head">
+    <div>
+      <p class="section-kicker">WRITING</p>
+      <h2 id="columns-title">文章专栏</h2>
+    </div>
+    <a class="section-link" href="{{ "posts/" | relURL }}">查看全部 <span aria-hidden="true">→</span></a>
+  </div>
+  {{ $posts := where .Site.RegularPages "Section" "posts" }}
+  {{ if $posts }}
+    {{ partial "category-constellation.html" (dict "Pages" $posts "ScrollExpand" true) }}
+    {{ partial "category-bento.html" (dict "Pages" $posts) }}
+  {{ else }}
+  <div class="empty-state">
+    <span class="empty-icon" aria-hidden="true">✦</span>
+    <p>文章正在准备中。</p>
+    <span>这里很快会有新的记录。</span>
+  </div>
+  {{ end }}
+</section>
+{{ end }}
