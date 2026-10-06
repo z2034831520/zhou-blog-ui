@@ -110,7 +110,7 @@
     });
     stage.classList.add('is-ready');
 
-    // The homepage scrolls a camera from one column to the full map.
+    // Wheel input over the map moves the camera; page scrolling alone never starts it.
     // All stars and connections remain in the same scene throughout the zoom.
     const section = stage.closest('[data-scroll-expand]');
     const world = stage.querySelector('.constellation-world');
@@ -120,97 +120,76 @@
     const scrollArea = stage.closest('.constellation-scroll');
     const focusNode = nodes.find(node => node.dataset.column === '单片机') || nodes[0];
     const startScale = 3.6;
-    const zoomDuration = 900;
-    // The wheel is locked during zoom; only a short sticky runout is needed afterward.
-    const holdDistance = 200;
-    const sticky = section.querySelector('.constellation-sticky');
+    const wheelDistance = 600;
+    const scrollHint = section.querySelector('.constellation-scroll-hint');
+    const initialHint = scrollHint?.textContent;
+    const initialAriaLabel = scrollArea.getAttribute('aria-label');
     const clamp = value => Math.max(0, Math.min(1, value));
-    const smoothstep = value => { const t = clamp(value); return t * t * (3 - 2 * t); };
     let expanding = false;
     let current = 0;
-    let frame = 0;
     let expandedOnce = false;
-    let animating = false;
-    let animationStart = 0;
 
     const renderZoom = progress => {
-      const eased = smoothstep(progress);
-      const scale = Math.exp(Math.log(startScale) * (1 - eased));
+      current = clamp(progress);
+      const scale = Math.exp(Math.log(startScale) * (1 - current));
       const focusX = focusNode.offsetLeft;
       const focusY = focusNode.offsetTop;
       const centerX = scrollArea.scrollLeft + scrollArea.clientWidth / 2;
       const centerY = stage.clientHeight / 2;
-      const x = (1 - eased) * (centerX - focusX) - focusX * (scale - 1);
-      const y = (1 - eased) * (centerY - focusY) - focusY * (scale - 1);
+      const x = (1 - current) * (centerX - focusX) - focusX * (scale - 1);
+      const y = (1 - current) * (centerY - focusY) - focusY * (scale - 1);
       world.style.transform = `translate3d(${x.toFixed(2)}px, ${y.toFixed(2)}px, 0) scale(${scale.toFixed(4)})`;
       if (progressLabel) progressLabel.textContent = `${scale.toFixed(1)}×`;
     };
-    const tick = now => {
-      frame = 0;
-      current = clamp((now - animationStart) / zoomDuration);
-      renderZoom(current);
-      if (current < 1) frame = requestAnimationFrame(tick);
-      else {
-        animating = false;
-        expandedOnce = true;
-      }
+    const finishZoom = () => {
+      expandedOnce = true;
+      renderZoom(1);
+      if (scrollHint) scrollHint.textContent = ' · 已展开全图，继续滚动浏览';
     };
-    const isReady = () => {
-      const rect = sticky.getBoundingClientRect();
-      return rect.top >= -2 && rect.top <= 16 && rect.bottom <= window.innerHeight - 12;
-    };
-    const startZoom = () => {
-      if (!expanding || animating || expandedOnce) return;
-      animating = true;
-      animationStart = performance.now();
-      frame = requestAnimationFrame(tick);
-    };
-    const onScroll = () => { if (isReady()) startZoom(); };
     const onWheel = event => {
       if (!expanding || expandedOnce) return;
-      if (animating) { event.preventDefault(); return; }
-      if (event.deltaY <= 0 || !isReady()) return;
+      if (Math.abs(event.deltaY) <= Math.abs(event.deltaX)) return;
+      const unit = event.deltaMode === 1 ? 16 : event.deltaMode === 2 ? window.innerHeight : 1;
+      const distance = event.deltaY * unit;
+      if (!distance || (distance < 0 && current === 0)) return;
       event.preventDefault();
-      startZoom();
+      const next = clamp(current + distance / wheelDistance);
+      if (next === 1) finishZoom(); else renderZoom(next);
     };
-    const measure = () => {
-      const heading = section.querySelector('.constellation-heading');
-      const headingHeight = heading.getBoundingClientRect().height +
-        parseFloat(getComputedStyle(heading).marginBottom || 0);
-      section.style.minHeight = `${headingHeight + sticky.getBoundingClientRect().height + holdDistance}px`;
+    const onKeydown = event => {
+      if (!expanding || expandedOnce || event.target !== scrollArea) return;
+      if (event.key !== 'Enter' && event.key !== ' ') return;
+      event.preventDefault();
+      finishZoom();
     };
+    const onPan = () => { if (expanding) renderZoom(current); };
     const enable = () => {
       if (expanding) return;
       expanding = true;
-      measure();
-      current = expandedOnce ? 1 : 0;
-      renderZoom(current);
+      renderZoom(expandedOnce ? 1 : current);
       section.classList.add('is-expanding');
-      window.addEventListener('scroll', onScroll, { passive: true });
-      window.addEventListener('wheel', onWheel, { passive: false });
-      window.addEventListener('resize', measure, { passive: true });
+      scrollArea.setAttribute('aria-label', '专栏星图，可左右滚动；按回车或空格展开全图');
+      scrollArea.addEventListener('wheel', onWheel, { passive: false });
+      scrollArea.addEventListener('keydown', onKeydown);
       scrollArea.addEventListener('scroll', onPan, { passive: true });
-      onScroll();
     };
     const disable = () => {
       if (!expanding) return;
       expanding = false;
-      if (frame) cancelAnimationFrame(frame);
-      frame = 0;
-      animating = false;
-      window.removeEventListener('scroll', onScroll);
-      window.removeEventListener('wheel', onWheel);
-      window.removeEventListener('resize', measure);
+      scrollArea.removeEventListener('wheel', onWheel);
+      scrollArea.removeEventListener('keydown', onKeydown);
       scrollArea.removeEventListener('scroll', onPan);
       section.classList.remove('is-expanding');
-      section.style.removeProperty('min-height');
+      scrollArea.setAttribute('aria-label', initialAriaLabel);
       world.style.removeProperty('transform');
       if (progressLabel) progressLabel.textContent = '';
     };
-    const onPan = () => { if (expanding) renderZoom(current); };
     const sync = () => {
       const fits = section.querySelector('.constellation-sticky').getBoundingClientRect().height <= window.innerHeight - 24;
-      if (media.matches && fits) enable(); else disable();
+      if (media.matches && fits) {
+        enable();
+        if (scrollHint) scrollHint.textContent = expandedOnce ? ' · 已展开全图，继续滚动浏览' : initialHint;
+      } else disable();
     };
     media.addEventListener('change', sync);
     window.addEventListener('resize', sync, { passive: true });

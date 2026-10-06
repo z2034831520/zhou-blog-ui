@@ -432,7 +432,6 @@ a:focus-visible { outline: 3px solid var(--accent); outline-offset: 4px; border-
 .constellation-scroll-hint, .constellation-progress { display: none; }
 .constellation-scroll-expand.is-expanding .constellation-scroll-hint { display: inline; }
 .constellation-scroll-expand.is-expanding .constellation-progress { display: inline-block; margin-left: 14px; color: var(--accent); font-variant-numeric: tabular-nums; font-weight: 750; }
-.constellation-scroll-expand.is-expanding .constellation-sticky { position: sticky; top: 12px; z-index: 2; }
 .constellation-scroll-expand.is-expanding .constellation-world { will-change: transform; }
 .constellation-scroll-expand.is-expanding .constellation-stage.has-active-node .constellation-node:not(.is-active) { opacity: 1; }
 .constellation-scroll-expand.is-expanding .constellation-stage.has-active-node .constellation-connections line:not(.is-active) { opacity: .42; }

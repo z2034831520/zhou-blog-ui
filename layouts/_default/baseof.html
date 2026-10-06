@@ -8,10 +8,10 @@
   <meta name="description" content="{{ with .Description }}{{ . }}{{ else }}{{ .Site.Params.description }}{{ end }}">
   <title>{{ if .IsHome }}{{ .Site.Title }}{{ else }}{{ .Title }} · {{ .Site.Title }}{{ end }}</title>
   <link rel="icon" type="image/svg+xml" href="{{ "brand-mark.svg" | relURL }}">
-  <link rel="stylesheet" href="{{ "css/site.css" | relURL }}?v=20261005-about-echo">
+  <link rel="stylesheet" href="{{ "css/site.css" | relURL }}?v=20261006-wheel-zoom">
   <script src="{{ "js/site-effects.js" | relURL }}?v=20261004-columns" defer></script>
   <script src="{{ "js/glow-cursor.js" | relURL }}?v=20261005-glow-cursor" defer></script>
-  {{ if or .IsHome (and .IsSection (eq .Section "posts")) }}<script src="{{ "js/category-constellation.js" | relURL }}?v=20261005-short-hold" defer></script>{{ end }}
+  {{ if or .IsHome (and .IsSection (eq .Section "posts")) }}<script src="{{ "js/category-constellation.js" | relURL }}?v=20261006-wheel-zoom" defer></script>{{ end }}
   {{ if .IsHome }}<script src="{{ "js/cursor-grid.js" | relURL }}?v=20261005" defer></script>{{ end }}
   {{ if .IsHome }}<script src="{{ "js/decrypted-text.js" | relURL }}?v=20261005-quote-sequence" defer></script>{{ end }}
   {{ if .Params.echo_title }}<script src="{{ "js/about-echo.js" | relURL }}?v=20261005-about-echo" defer></script>{{ end }}
