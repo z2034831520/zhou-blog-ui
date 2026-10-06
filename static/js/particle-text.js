@@ -13,17 +13,18 @@
   const motion = window.matchMedia('(prefers-reduced-motion: reduce)');
   const compact = window.matchMedia('(max-width: 700px)');
   const clamp = (value, low, high) => Math.min(high, Math.max(low, value));
-  const easeOutCubic = value => 1 - Math.pow(1 - value, 3);
   const base = [234, 242, 245];
   const accent = [119, 217, 224];
-  const pointer = { active: false, x: 0, y: 0, smoothX: 0, smoothY: 0 };
+  const pointer = { active: false, x: 0, y: 0 };
 
   let particles = [];
   let width = 0;
   let height = 0;
-  let gatherStart = 0;
+  let pixelRatio = 0;
   let frameId = 0;
   let resizeFrame = 0;
+  let lastFrameTime = 0;
+  let forceBuild = false;
   let inView = true;
 
   const stop = () => {
@@ -31,49 +32,45 @@
     frameId = 0;
   };
 
-  const render = now => {
+  const render = (now = performance.now()) => {
     frameId = 0;
+    const elapsed = lastFrameTime ? Math.max(0, now - lastFrameTime) : 16;
+    lastFrameTime = now;
     context.clearRect(0, 0, width, height);
     context.shadowBlur = 3;
     context.shadowColor = 'rgba(119, 217, 224, .65)';
 
-    pointer.smoothX += (pointer.x - pointer.smoothX) * 0.18;
-    pointer.smoothY += (pointer.y - pointer.smoothY) * 0.18;
-
+    let moving = false;
+    const response = 1 - Math.exp(-elapsed / (pointer.active ? 16 : 27));
     for (const particle of particles) {
-      const progress = clamp((now - gatherStart - particle.delay) / 1350, 0, 1);
-      const eased = easeOutCubic(progress);
-      let x = particle.startX + (particle.targetX - particle.startX) * eased;
-      let y = particle.startY + (particle.targetY - particle.startY) * eased;
-
-      if (progress === 1) {
-        const driftTime = now * 0.001;
-        x += Math.sin(driftTime * 0.9 + particle.seed * 10) * particle.depth * 0.6;
-        y += Math.cos(driftTime * 0.75 + particle.depth * 10) * particle.depth * 0.6;
-      }
+      let x = particle.targetX;
+      let y = particle.targetY;
 
       if (pointer.active) {
-        const dx = x - pointer.smoothX;
-        const dy = y - pointer.smoothY;
+        const dx = x - pointer.x;
+        const dy = y - pointer.y;
         const distance = Math.hypot(dx, dy);
-        if (distance > 0 && distance < 110) {
-          const force = Math.pow(1 - distance / 110, 2) * 38;
-          x += dx / distance * force;
-          y += dy / distance * force;
+        if (distance < 120) {
+          const force = Math.pow(1 - distance / 120, 2) * 54;
+          const angle = particle.seed * Math.PI * 2;
+          x += (distance ? dx / distance : Math.cos(angle)) * force;
+          y += (distance ? dy / distance : Math.sin(angle)) * force;
         }
       }
 
-      particle.x += (x - particle.x) * 0.24;
-      particle.y += (y - particle.y) * 0.24;
-      context.globalAlpha = 0.32 + progress * 0.68;
+      particle.x += (x - particle.x) * response;
+      particle.y += (y - particle.y) * response;
+      if (Math.abs(x - particle.x) <= 0.1) particle.x = x;
+      else moving = true;
+      if (Math.abs(y - particle.y) <= 0.1) particle.y = y;
+      else moving = true;
       context.fillStyle = particle.color;
       context.fillRect(particle.x, particle.y, particle.size, particle.size);
     }
 
-    context.globalAlpha = 1;
     context.shadowBlur = 0;
     title.classList.add('is-ready');
-    if (inView && !document.hidden && !motion.matches && !compact.matches) {
+    if (moving && inView && !document.hidden && !motion.matches && !compact.matches) {
       frameId = window.requestAnimationFrame(render);
     }
   };
@@ -86,6 +83,8 @@
 
   const build = () => {
     resizeFrame = 0;
+    const required = forceBuild;
+    forceBuild = false;
     if (motion.matches || compact.matches) {
       stop();
       title.classList.remove('is-ready');
@@ -93,11 +92,15 @@
     }
 
     const box = title.getBoundingClientRect();
-    width = Math.round(box.width);
-    height = Math.round(box.height);
-    if (width < 10 || height < 10) return;
+    const nextWidth = Math.round(box.width);
+    const nextHeight = Math.round(box.height);
+    if (nextWidth < 10 || nextHeight < 10) return;
 
     const ratio = Math.min(window.devicePixelRatio || 1, 2);
+    if (!required && nextWidth === width && nextHeight === height && ratio === pixelRatio) return;
+    width = nextWidth;
+    height = nextHeight;
+    pixelRatio = ratio;
     canvas.width = Math.round(width * ratio);
     canvas.height = Math.round(height * ratio);
     context.setTransform(ratio, 0, 0, ratio, 0, 0);
@@ -135,35 +138,34 @@
         if (alpha > 45) targets.push({ x, y, alpha });
       }
     }
-    if (!targets.length) return;
+    if (!targets.length) {
+      particles = [];
+      title.classList.remove('is-ready');
+      return;
+    }
 
     const stride = Math.max(1, Math.ceil(targets.length / 2200));
-    const scatter = Math.min(175, width * 0.18 + 50);
     particles = targets.filter((_, index) => index % stride === 0).map((target, index) => {
       const seed = ((index * 9301 + 49297) % 233280) / 233280;
-      const depth = 0.45 + (((index * 233 + 97) % 1000) / 1000) * 0.9;
-      const angle = seed * Math.PI * 2;
-      const distance = scatter * (0.35 + depth * 0.75);
-      const startX = target.x + Math.cos(angle) * distance + (seed - 0.5) * scatter * 0.45;
-      const startY = target.y + Math.sin(angle) * distance + (depth - 0.9) * scatter * 0.45;
       const blend = clamp(target.x / Math.max(1, width) + (seed - 0.5) * 0.35, 0, 1);
       const color = `rgb(${base.map((channel, channelIndex) =>
         Math.round(channel + (accent[channelIndex] - channel) * blend)).join(',')})`;
       return {
-        x: startX, y: startY, startX, startY,
+        x: target.x, y: target.y,
         targetX: target.x, targetY: target.y,
         size: Math.max(1, 1.7 * (0.75 + target.alpha / 255 * 0.45)),
-        color, seed, depth, delay: seed * 350
+        color, seed
       };
     });
 
-    gatherStart = performance.now();
     pointer.active = false;
     stop();
-    resume();
+    lastFrameTime = 0;
+    render();
   };
 
-  const queueBuild = () => {
+  const queueBuild = (required = false) => {
+    forceBuild ||= required;
     if (resizeFrame) window.cancelAnimationFrame(resizeFrame);
     resizeFrame = window.requestAnimationFrame(build);
   };
@@ -172,20 +174,20 @@
     const box = title.getBoundingClientRect();
     pointer.x = event.clientX - box.left;
     pointer.y = event.clientY - box.top;
-    if (!pointer.active) {
-      pointer.smoothX = pointer.x;
-      pointer.smoothY = pointer.y;
-    }
     pointer.active = true;
+    resume();
   }, { passive: true });
-  title.addEventListener('pointerleave', () => { pointer.active = false; });
-  document.addEventListener('visibilitychange', resume);
+  title.addEventListener('pointerleave', () => { pointer.active = false; resume(); });
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) { pointer.active = false; stop(); }
+    else resume();
+  });
   motion.addEventListener('change', () => {
     if (motion.matches) {
       stop();
       title.classList.remove('is-ready');
     } else {
-      queueBuild();
+      queueBuild(true);
     }
   });
   compact.addEventListener('change', () => {
@@ -193,19 +195,19 @@
       stop();
       title.classList.remove('is-ready');
     } else if (!motion.matches) {
-      queueBuild();
+      queueBuild(true);
     }
   });
 
   if ('IntersectionObserver' in window) {
     new IntersectionObserver(entries => {
       inView = entries[0].isIntersecting;
-      if (inView) resume(); else stop();
+      if (inView) resume(); else { pointer.active = false; stop(); }
     }).observe(title);
   }
-  if ('ResizeObserver' in window) new ResizeObserver(queueBuild).observe(title);
+  if ('ResizeObserver' in window) new ResizeObserver(() => queueBuild()).observe(title);
   if (!motion.matches && !compact.matches) {
-    queueBuild();
-    document.fonts?.ready.then(queueBuild).catch(() => {});
+    queueBuild(true);
+    document.fonts?.ready.then(() => queueBuild(true)).catch(() => {});
   }
 })();

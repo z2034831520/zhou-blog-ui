@@ -15,7 +15,7 @@
   {{ if .IsHome }}<script src="{{ "js/cursor-grid.js" | relURL }}?v=20261005" defer></script>{{ end }}
   {{ if .IsHome }}<script src="{{ "js/decrypted-text.js" | relURL }}?v=20261005-quote-sequence" defer></script>{{ end }}
   {{ if .Params.echo_title }}<script src="{{ "js/about-echo.js" | relURL }}?v=20261005-about-echo" defer></script>{{ end }}
-  {{ if and .IsSection (eq .Section "posts") }}<script src="{{ "js/particle-text.js" | relURL }}?v=20261005-articles-mobile" defer></script>{{ end }}
+  {{ if and .IsSection (eq .Section "posts") }}<script src="{{ "js/particle-text.js" | relURL }}?v=20261006-instant-particles-3" defer></script>{{ end }}
   {{ if and .IsSection (eq .Section "posts") }}<script src="{{ "js/article-reveal.js" | relURL }}?v=20261005-article-layout" defer></script>{{ end }}
   <link rel="alternate" type="application/rss+xml" title="{{ .Site.Title }} RSS" href="{{ "posts/index.xml" | relURL }}">
 </head>
