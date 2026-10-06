@@ -15,6 +15,8 @@
   const clamp = (value, low, high) => Math.min(high, Math.max(low, value));
   const base = [234, 242, 245];
   const accent = [119, 217, 224];
+  const gatherDuration = 520;
+  const gatherStagger = 80;
   const pointer = { active: false, x: 0, y: 0 };
 
   let particles = [];
@@ -26,6 +28,8 @@
   let lastFrameTime = 0;
   let forceBuild = false;
   let inView = true;
+  let gatherStart = null;
+  let gathered = false;
 
   const stop = () => {
     if (frameId) window.cancelAnimationFrame(frameId);
@@ -41,8 +45,21 @@
     context.shadowColor = 'rgba(119, 217, 224, .65)';
 
     let moving = false;
+    const gathering = !gathered && now < gatherStart + gatherDuration + gatherStagger;
+    if (!gathering) gathered = true;
     const response = 1 - Math.exp(-elapsed / (pointer.active ? 16 : 27));
     for (const particle of particles) {
+      if (gathering) {
+        const progress = clamp((now - gatherStart - particle.delay) / gatherDuration, 0, 1);
+        const eased = 1 - Math.pow(1 - progress, 3);
+        particle.x = particle.startX + (particle.targetX - particle.startX) * eased;
+        particle.y = particle.startY + (particle.targetY - particle.startY) * eased;
+        moving = true;
+        context.fillStyle = particle.color;
+        context.fillRect(particle.x, particle.y, particle.size, particle.size);
+        continue;
+      }
+
       let x = particle.targetX;
       let y = particle.targetY;
 
@@ -145,13 +162,21 @@
     }
 
     const stride = Math.max(1, Math.ceil(targets.length / 2200));
+    if (gatherStart === null) gatherStart = performance.now();
+    const gatherIsActive = !gathered && performance.now() < gatherStart + gatherDuration + gatherStagger;
     particles = targets.filter((_, index) => index % stride === 0).map((target, index) => {
       const seed = ((index * 9301 + 49297) % 233280) / 233280;
+      const angle = seed * Math.PI * 2;
+      const distance = 20 + seed * 20;
+      const startX = target.x + Math.cos(angle) * distance;
+      const startY = target.y + Math.sin(angle) * distance;
       const blend = clamp(target.x / Math.max(1, width) + (seed - 0.5) * 0.35, 0, 1);
       const color = `rgb(${base.map((channel, channelIndex) =>
         Math.round(channel + (accent[channelIndex] - channel) * blend)).join(',')})`;
       return {
-        x: target.x, y: target.y,
+        x: gatherIsActive ? startX : target.x,
+        y: gatherIsActive ? startY : target.y,
+        startX, startY, delay: seed * gatherStagger,
         targetX: target.x, targetY: target.y,
         size: Math.max(1, 1.7 * (0.75 + target.alpha / 255 * 0.45)),
         color, seed
